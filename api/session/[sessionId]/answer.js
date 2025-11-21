@@ -64,6 +64,8 @@ module.exports = async (req, res) => {
                 session.completed = true;
                 
                 const grade = calculateGrade(session.score, session.timeRemaining);
+                session.grade = grade; // Store grade in session for later retrieval
+                
                 const leaderboardEntry = {
                     username: session.username,
                     score: session.score,

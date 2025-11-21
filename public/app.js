@@ -27,7 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const storedSessionId = localStorage.getItem('quizSessionId');
     if (storedSessionId) {
         sessionId = storedSessionId;
+        // Hide welcome screen while loading session
+        document.getElementById('welcomeScreen').classList.remove('active');
         resumeSession();
+    } else {
+        // No stored session, ensure welcome screen is shown
+        showScreen('welcomeScreen');
     }
     
     // Start button
@@ -76,15 +81,18 @@ async function startQuiz() {
 // Resume existing session
 async function resumeSession() {
     try {
+        console.log('Attempting to resume session:', sessionId);
         const response = await fetch(`${API_URL}/session/${sessionId}`);
         const session = await response.json();
+        
+        console.log('Resume response:', { ok: response.ok, status: response.status, session });
         
         if (response.ok) {
             currentSession = session;
             
             if (!session.active) {
                 if (session.completed) {
-                    showCompletionScreen();
+                    showCompletionScreen(session.grade);
                 } else if (session.eliminated) {
                     if (session.timeRemaining === 0) {
                         showTimeoutScreen();
@@ -93,17 +101,21 @@ async function resumeSession() {
                     }
                 }
             } else {
+                console.log('Starting quiz session with current question:', session.currentQuestion);
                 startQuizSession();
             }
         } else {
             // Session not found, start fresh
+            console.log('Session not found, clearing localStorage');
             localStorage.removeItem('quizSessionId');
             sessionId = null;
+            showScreen('welcomeScreen');
         }
     } catch (error) {
         console.error('Error resuming session:', error);
         localStorage.removeItem('quizSessionId');
         sessionId = null;
+        showScreen('welcomeScreen');
     }
 }
 
@@ -178,7 +190,7 @@ async function checkSession() {
                 } else if (session.eliminated) {
                     showGameOverScreen();
                 } else if (session.completed) {
-                    showCompletionScreen();
+                    showCompletionScreen(session.grade);
                 }
             }
         }
@@ -191,7 +203,10 @@ async function checkSession() {
 function loadQuestion() {
     const questionIndex = currentSession.currentQuestion;
     
+    console.log('Loading question:', { questionIndex, totalQuestions: questions.length });
+    
     if (questionIndex >= questions.length) {
+        console.log('No more questions available');
         return;
     }
     
@@ -211,6 +226,8 @@ function loadQuestion() {
         button.onclick = () => submitAnswer(index);
         optionsContainer.appendChild(button);
     });
+    
+    console.log('Question loaded successfully:', q.question.substring(0, 50) + '...');
 }
 
 // Submit answer
@@ -218,6 +235,8 @@ async function submitAnswer(selectedIndex) {
     const questionIndex = currentSession.currentQuestion;
     const q = questions[questionIndex];
     const isCorrect = selectedIndex === q.correct;
+    
+    console.log('Submitting answer:', { questionIndex, selectedIndex, isCorrect, correctAnswer: q.correct });
     
     // Disable all buttons
     document.querySelectorAll('.option-btn').forEach(btn => {
@@ -244,22 +263,33 @@ async function submitAnswer(selectedIndex) {
         
         const data = await response.json();
         
+        console.log('Answer response:', { ok: response.ok, status: response.status, data });
+        
         if (response.ok) {
             currentSession = data.session;
+            console.log('Updated session:', { score: currentSession.score, currentQuestion: currentSession.currentQuestion });
             updateUI();
             
             if (data.eliminated) {
+                console.log('Player eliminated');
                 clearInterval(timerInterval);
                 setTimeout(() => showGameOverScreen(), 2000);
             } else if (data.completed) {
+                console.log('Quiz completed with grade:', data.grade);
                 clearInterval(timerInterval);
                 setTimeout(() => showCompletionScreen(data.grade), 2000);
             } else if (data.timeout) {
+                console.log('Time ran out');
                 clearInterval(timerInterval);
                 setTimeout(() => showTimeoutScreen(), 2000);
             } else if (isCorrect) {
-                setTimeout(() => loadQuestion(), 1500);
+                console.log('Correct answer, loading next question in 1.5s');
+                setTimeout(() => {
+                    console.log('Now loading question:', currentSession.currentQuestion);
+                    loadQuestion();
+                }, 1500);
             } else {
+                console.log('Wrong answer, re-enabling buttons in 2s');
                 // Re-enable buttons for another attempt
                 setTimeout(() => {
                     document.querySelectorAll('.option-btn').forEach(btn => {
@@ -267,8 +297,12 @@ async function submitAnswer(selectedIndex) {
                         btn.classList.remove('wrong', 'correct');
                     });
                     document.getElementById('feedback').textContent = '';
+                    console.log('Buttons re-enabled, ready for retry');
                 }, 2000);
             }
+        } else {
+            console.error('Server returned error:', data);
+            alert('ERROR: ' + (data.error || 'Unable to submit answer'));
         }
     } catch (error) {
         console.error('Error submitting answer:', error);
