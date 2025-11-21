@@ -3,3 +3,6 @@ sessions/
 leaderboard.json
 *.log
 .DS_Store
+.vercel
+.env
+.env.local

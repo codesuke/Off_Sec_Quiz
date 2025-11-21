@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    },
+    {
+      "source": "/api/session/create",
+      "destination": "/api/session/create.js"
+    },
+    {
+      "source": "/api/session/:sessionId",
+      "destination": "/api/session/[sessionId].js"
+    },
+    {
+      "source": "/api/session/:sessionId/answer",
+      "destination": "/api/session/[sessionId]/answer.js"
+    },
+    {
+      "source": "/api/leaderboard",
+      "destination": "/api/leaderboard.js"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
+    }
+  ]
+}

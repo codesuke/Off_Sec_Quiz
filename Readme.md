@@ -59,17 +59,44 @@ This installs:
 
 ## 🎯 Running the Application
 
-### Production Mode
+### Local Development
+
+#### Production Mode
 ```powershell
 npm start
 ```
 
-### Development Mode (with auto-restart)
+#### Development Mode (with auto-restart)
 ```powershell
 npm run dev
 ```
 
 The server will start on **http://localhost:3000**
+
+### Deploy to Vercel (Recommended)
+
+#### Quick Deploy
+```powershell
+# Install Vercel CLI
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy
+vercel
+
+# Deploy to production
+vercel --prod
+```
+
+#### Via Vercel Dashboard
+1. Go to [vercel.com](https://vercel.com)
+2. Click "Add New Project"
+3. Import your Git repository
+4. Click "Deploy"
+
+**Note**: For detailed Vercel deployment instructions, see [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md)
 
 ## 🎮 How to Play
 
