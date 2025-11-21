@@ -1,0 +1,5 @@
+node_modules/
+sessions/
+leaderboard.json
+*.log
+.DS_Store
