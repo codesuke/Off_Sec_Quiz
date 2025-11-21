@@ -6,9 +6,14 @@ Your cyberpunk offensive security quiz is now live and accessible worldwide!
 
 ### 🌐 Production URLs
 
-**Primary URL:**
+**Primary Production URL:**
 ```
-https://cyberquiz-offsec-3eeyhqflp-shadow-dragon-2002s-projects.vercel.app
+https://cyberquiz-offsec.vercel.app
+```
+
+**Latest Deployment:**
+```
+https://cyberquiz-offsec-4jsnw11pf-shadow-dragon-2002s-projects.vercel.app
 ```
 
 **Vercel Dashboard:**
@@ -66,7 +71,7 @@ Your project is now connected to GitHub:
 
 Send this URL to anyone:
 ```
-https://cyberquiz-offsec-3eeyhqflp-shadow-dragon-2002s-projects.vercel.app
+https://cyberquiz-offsec.vercel.app
 ```
 
 They can:
@@ -136,6 +141,8 @@ vercel --prod
 
 Your CyberQuiz is now live and ready for hackers worldwide to test their offensive security knowledge!
 
-**Live URL**: https://cyberquiz-offsec-3eeyhqflp-shadow-dragon-2002s-projects.vercel.app
+**Live Production URL**: https://cyberquiz-offsec.vercel.app
+
+The error has been fixed! The storage module now properly handles missing Vercel KV and falls back to in-memory storage. Your quiz is fully functional!
 
 Start playing and dominate the leaderboard! ⚡🔥🎮
