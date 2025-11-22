@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { sessionId } = req.params;
+        const { sessionId } = req.query;
         const { questionIndex, answerIndex } = req.body;
 
         // Call the RPC function for atomic answer processing
