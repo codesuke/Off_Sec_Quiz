@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { sessionId } = req.query;
+        const { sessionId } = req.params; // Changed from req.query for Express
         const session = await storage.getSession(sessionId);
         
         if (!session) {
