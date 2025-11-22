@@ -7,7 +7,8 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { sessionId } = req.params;
+        // Support both Vercel (req.query) and Express (req.params)
+        const sessionId = req.query.sessionId || req.params.sessionId;
         const { questionIndex, answerIndex } = req.body;
 
         // Call the RPC function for atomic answer processing
