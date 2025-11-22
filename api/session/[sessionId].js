@@ -1,3 +1,4 @@
+// api/session/[sessionId].js
 const storage = require('../storage.js');
 
 module.exports = async (req, res) => {
