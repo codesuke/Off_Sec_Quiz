@@ -205,13 +205,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Check for existing session
-    const storedSessionId = localStorage.getItem('quizSessionId');
-    if (storedSessionId) {
-        sessionId = storedSessionId;
-        checkSessionStatus();
-    } else {
+    // Check if quiz is already completed on this device
+    if (localStorage.getItem('quiz_completed') === 'true') {
         showScreen('welcomeScreen');
+        const authContainer = document.getElementById('authContainer');
+        const resumeContainer = document.getElementById('resumeContainer');
+        
+        if (resumeContainer) resumeContainer.style.display = 'none';
+        
+        if (authContainer) {
+            authContainer.innerHTML = `
+                <div class="terminal-box" style="text-align: center; border-color: var(--neon-cyan); margin-top: 20px;">
+                    <p class="terminal-text" style="color: var(--neon-cyan); font-size: 1.2rem; margin-bottom: 10px;">MISSION STATUS: COMPLETED</p>
+                    <p class="terminal-text" style="margin-bottom: 20px;">You have already completed this challenge on this device.</p>
+                    <button id="viewLeaderboardOnlyBtn" class="cyber-btn">VIEW LEADERBOARD</button>
+                </div>
+            `;
+            
+            document.getElementById('viewLeaderboardOnlyBtn').addEventListener('click', async () => {
+                const leaderboardModal = document.getElementById('leaderboardModal');
+                leaderboardModal.classList.add('active');
+                await loadLeaderboardToModal();
+            });
+        }
+    } else {
+        // Check for existing session
+        const storedSessionId = localStorage.getItem('quizSessionId');
+        if (storedSessionId) {
+            sessionId = storedSessionId;
+            checkSessionStatus();
+        } else {
+            showScreen('welcomeScreen');
+        }
     }
     
     // Resume/Reset handlers
@@ -609,6 +634,7 @@ function showGameOverScreen() {
     document.getElementById('goTime').textContent = formatTime(timeUsed);
     showScreen('gameOverScreen');
     localStorage.removeItem('quizSessionId');
+    localStorage.setItem('quiz_completed', 'true');
 }
 
 // Show timeout screen
@@ -618,6 +644,7 @@ function showTimeoutScreen() {
     document.getElementById('toScore').textContent = currentSession.score;
     showScreen('timeoutScreen');
     localStorage.removeItem('quizSessionId');
+    localStorage.setItem('quiz_completed', 'true');
 }
 
 // Show completion screen
@@ -672,6 +699,7 @@ async function showCompletionScreen(grade) {
     
     showScreen('completionScreen');
     localStorage.removeItem('quizSessionId');
+    localStorage.setItem('quiz_completed', 'true');
 }
 
 // Load leaderboard to modal
