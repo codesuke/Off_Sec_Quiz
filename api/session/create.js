@@ -1,12 +1,7 @@
-const storage = require('../storage-enhanced.js');
+const storage = require('../storage.js');
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = async (req, res) => {
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
@@ -18,8 +13,27 @@ module.exports = async (req, res) => {
     try {
         const { username } = req.body;
         
-        if (!username || username.trim().length === 0) {
+        // 1. Basic Existence Check
+        if (!username || typeof username !== 'string' || username.trim().length === 0) {
             return res.status(400).json({ error: 'Username required' });
+        }
+
+        const cleanUsername = username.trim();
+
+        // 2. Length Validation
+        if (cleanUsername.length > 15) {
+            return res.status(400).json({ error: 'Username too long (max 15 chars)' });
+        }
+
+        // 3. Character Validation (Alphanumeric + spaces only)
+        if (!/^[a-zA-Z0-9 ]+$/.test(cleanUsername)) {
+            return res.status(400).json({ error: 'Username can only contain letters, numbers, and spaces' });
+        }
+
+        // 4. Reserved/Profanity Check
+        const forbiddenWords = ['admin', 'root', 'system', 'moderator', 'null', 'undefined'];
+        if (forbiddenWords.some(word => cleanUsername.toLowerCase().includes(word))) {
+            return res.status(400).json({ error: 'Username not allowed' });
         }
         
         const sessionId = uuidv4();

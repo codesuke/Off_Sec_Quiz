@@ -1,3 +1,4 @@
+Guides/
 node_modules/
 sessions/
 leaderboard.json
@@ -6,3 +7,5 @@ leaderboard.json
 .vercel
 .env
 .env.local
+
+.vercel

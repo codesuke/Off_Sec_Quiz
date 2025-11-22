@@ -120,10 +120,10 @@ async function resumeSession() {
 }
 
 // Start quiz session
-function startQuizSession() {
+async function startQuizSession() {
     document.getElementById('playerName').textContent = currentSession.username;
     updateUI();
-    loadQuestion();
+    await loadQuestion(); // Make this async
     startTimer();
     showScreen('quizScreen');
 }
@@ -200,113 +200,103 @@ async function checkSession() {
 }
 
 // Load question
-function loadQuestion() {
-    const questionIndex = currentSession.currentQuestion;
-    
-    console.log('Loading question:', { questionIndex, totalQuestions: questions.length });
-    
-    if (questionIndex >= questions.length) {
-        console.log('No more questions available');
-        return;
+async function loadQuestion() {
+    try {
+        const response = await fetch(`${API_URL}/session/${sessionId}/question`);
+        if (!response.ok) {
+            // This might happen if the quiz is completed
+            const errorData = await response.json();
+            if (currentSession.completed) {
+                showCompletionScreen(currentSession.grade);
+            } else {
+                console.error('Failed to load question:', errorData.error);
+                alert('Error loading next question. Please refresh.');
+            }
+            return;
+        }
+
+        const q = await response.json();
+        
+        document.getElementById('questionNum').textContent = q.id + 1;
+        document.getElementById('question').textContent = q.question;
+        document.getElementById('feedback').textContent = '';
+        
+        const optionsContainer = document.getElementById('options');
+        optionsContainer.innerHTML = '';
+        
+        q.options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.className = 'option-btn';
+            button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+            button.onclick = () => submitAnswer(q.id, index);
+            optionsContainer.appendChild(button);
+        });
+
+    } catch (error) {
+        console.error('Fatal error loading question:', error);
+        alert('CONNECTION ERROR: Could not load the next question.');
     }
-    
-    const q = questions[questionIndex];
-    
-    document.getElementById('questionNum').textContent = questionIndex + 1;
-    document.getElementById('question').textContent = q.question;
-    document.getElementById('feedback').textContent = '';
-    
-    const optionsContainer = document.getElementById('options');
-    optionsContainer.innerHTML = '';
-    
-    q.options.forEach((option, index) => {
-        const button = document.createElement('button');
-        button.className = 'option-btn';
-        button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
-        button.onclick = () => submitAnswer(index);
-        optionsContainer.appendChild(button);
-    });
-    
-    console.log('Question loaded successfully:', q.question.substring(0, 50) + '...');
 }
 
 // Submit answer
-async function submitAnswer(selectedIndex) {
-    const questionIndex = currentSession.currentQuestion;
-    const q = questions[questionIndex];
-    const isCorrect = selectedIndex === q.correct;
-    
-    console.log('Submitting answer:', { questionIndex, selectedIndex, isCorrect, correctAnswer: q.correct });
+async function submitAnswer(questionIndex, selectedIndex) {
+    console.log('Submitting answer:', { questionIndex, selectedIndex });
     
     // Disable all buttons
     document.querySelectorAll('.option-btn').forEach(btn => {
         btn.disabled = true;
     });
     
-    // Visual feedback
     const buttons = document.querySelectorAll('.option-btn');
-    if (isCorrect) {
-        buttons[selectedIndex].classList.add('correct');
-        document.getElementById('feedback').innerHTML = '<span class="success">✓ ACCESS GRANTED [+50 CREDITS]</span>';
-    } else {
-        buttons[selectedIndex].classList.add('wrong');
-        document.getElementById('feedback').innerHTML = '<span class="danger">✗ ACCESS DENIED [-50 CREDITS]</span>';
-    }
+    buttons[selectedIndex].classList.add('selected');
+    document.getElementById('feedback').innerHTML = '<span>PROCESSING...</span>';
     
-    // Submit to server
     try {
         const response = await fetch(`${API_URL}/session/${sessionId}/answer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ questionIndex, isCorrect })
+            body: JSON.stringify({ questionIndex, answerIndex: selectedIndex })
         });
         
         const data = await response.json();
         
         console.log('Answer response:', { ok: response.ok, status: response.status, data });
+
+        buttons.forEach(btn => btn.classList.remove('selected'));
+        if (data.isCorrect) {
+            buttons[selectedIndex].classList.add('correct');
+            document.getElementById('feedback').innerHTML = '<span class="success">✓ ACCESS GRANTED [+50 CREDITS]</span>';
+        } else {
+            buttons[selectedIndex].classList.add('wrong');
+            document.getElementById('feedback').innerHTML = '<span class="danger">✗ ACCESS DENIED [-50 CREDITS]</span>';
+            if (data.correctAnswerIndex !== undefined) {
+                buttons[data.correctAnswerIndex].classList.add('correct');
+            }
+        }
         
         if (response.ok) {
             currentSession = data.session;
-            console.log('Updated session:', { score: currentSession.score, currentQuestion: currentSession.currentQuestion });
             updateUI();
             
-            if (data.eliminated) {
-                console.log('Player eliminated');
+            if (currentSession.eliminated) {
                 clearInterval(timerInterval);
                 setTimeout(() => showGameOverScreen(), 2000);
-            } else if (data.completed) {
-                console.log('Quiz completed with grade:', data.grade);
+            } else if (currentSession.completed) {
                 clearInterval(timerInterval);
-                setTimeout(() => showCompletionScreen(data.grade), 2000);
-            } else if (data.timeout) {
-                console.log('Time ran out');
-                clearInterval(timerInterval);
-                setTimeout(() => showTimeoutScreen(), 2000);
-            } else if (isCorrect) {
-                console.log('Correct answer, loading next question in 1.5s');
+                setTimeout(() => showCompletionScreen(currentSession.grade), 2000);
+            } else {
                 setTimeout(() => {
-                    console.log('Now loading question:', currentSession.currentQuestion);
                     loadQuestion();
                 }, 1500);
-            } else {
-                console.log('Wrong answer, re-enabling buttons in 2s');
-                // Re-enable buttons for another attempt
-                setTimeout(() => {
-                    document.querySelectorAll('.option-btn').forEach(btn => {
-                        btn.disabled = false;
-                        btn.classList.remove('wrong', 'correct');
-                    });
-                    document.getElementById('feedback').textContent = '';
-                    console.log('Buttons re-enabled, ready for retry');
-                }, 2000);
             }
         } else {
-            console.error('Server returned error:', data);
-            alert('ERROR: ' + (data.error || 'Unable to submit answer'));
+            alert('ERROR: ' + data.error);
+            document.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = false; });
         }
     } catch (error) {
         console.error('Error submitting answer:', error);
         alert('CONNECTION ERROR: Unable to submit answer');
+        document.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = false; });
     }
 }
 

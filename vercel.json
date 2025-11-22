@@ -1,12 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "framework": null,
+  "env": {
+    "SUPABASE_URL": "@supabase_url",
+    "SUPABASE_ANON_KEY": "@supabase_anon_key"
+  },
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/public/index.html"
-    },
     {
       "source": "/api/session/create",
       "destination": "/api/session/create.js"
@@ -16,12 +14,20 @@
       "destination": "/api/session/[sessionId].js"
     },
     {
+      "source": "/api/session/:sessionId/question",
+      "destination": "/api/session/[sessionId]/question.js"
+    },
+    {
       "source": "/api/session/:sessionId/answer",
       "destination": "/api/session/[sessionId]/answer.js"
     },
     {
       "source": "/api/leaderboard",
       "destination": "/api/leaderboard.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/$1"
     }
   ],
   "headers": [
@@ -29,16 +35,20 @@
       "source": "/api/(.*)",
       "headers": [
         {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://off-sec-quiz-main-alpha.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type"
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
         }
       ]
     }
