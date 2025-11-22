@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="crt-overlay"></div>
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-box tech-border">
+            <h3 class="modal-title">SYSTEM ALERT</h3>
+            <p id="modalMessage" class="modal-message"></p>
+            <button id="modalBtn" class="cyber-btn">ACKNOWLEDGE</button>
+        </div>
+    </div>
     <div class="cyberpunk-bg"></div>
     <div class="scan-line"></div>
     
@@ -57,8 +65,9 @@
                     <span id="progress" class="hud-value">0/60</span>
                 </div>
             </div>
+            <div id="progressBar" class="progress-container"></div>
 
-            <div class="question-container">
+            <div class="question-container tech-border">
                 <div class="question-number">CHALLENGE <span id="questionNum">1</span>/60</div>
                 <div id="question" class="question-text"></div>
                 <div id="feedback" class="feedback"></div>

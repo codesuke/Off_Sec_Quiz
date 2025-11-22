@@ -21,8 +21,37 @@ function formatTime(seconds) {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+// Custom Alert Function
+function showSystemAlert(message) {
+    const modal = document.getElementById('customModal');
+    const msgEl = document.getElementById('modalMessage');
+    const btn = document.getElementById('modalBtn');
+    
+    msgEl.textContent = message;
+    modal.classList.add('active');
+    
+    return new Promise(resolve => {
+        const close = () => {
+            modal.classList.remove('active');
+            btn.removeEventListener('click', close);
+            resolve();
+        };
+        btn.addEventListener('click', close);
+    });
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Progress Bar
+    const progressContainer = document.getElementById('progressBar');
+    if (progressContainer) {
+        for (let i = 0; i < 60; i++) {
+            const segment = document.createElement('div');
+            segment.className = 'progress-segment';
+            progressContainer.appendChild(segment);
+        }
+    }
+
     // Check for existing session
     const storedSessionId = localStorage.getItem('quizSessionId');
     if (storedSessionId) {
@@ -51,7 +80,7 @@ async function startQuiz() {
     const username = document.getElementById('usernameInput').value.trim();
     
     if (!username) {
-        alert('⚠ ERROR: HACKER ALIAS REQUIRED');
+        await showSystemAlert('⚠ ERROR: HACKER ALIAS REQUIRED');
         return;
     }
     
@@ -70,10 +99,10 @@ async function startQuiz() {
             localStorage.setItem('quizSessionId', sessionId);
             startQuizSession();
         } else {
-            alert('ERROR: ' + data.error);
+            await showSystemAlert('ERROR: ' + data.error);
         }
     } catch (error) {
-        alert('CONNECTION ERROR: Unable to establish link to server');
+        await showSystemAlert('CONNECTION ERROR: Unable to establish link to server');
         console.error(error);
     }
 }
@@ -134,6 +163,16 @@ function updateUI() {
     document.getElementById('progress').textContent = `${currentSession.currentQuestion}/60`;
     document.getElementById('timer').textContent = formatTime(currentSession.timeRemaining);
     
+    // Update Progress Bar
+    const segments = document.querySelectorAll('.progress-segment');
+    segments.forEach((seg, idx) => {
+        if (idx < currentSession.currentQuestion) {
+            seg.classList.add('active');
+        } else {
+            seg.classList.remove('active');
+        }
+    });
+
     // Color code score
     const scoreElement = document.getElementById('score');
     if (currentSession.score >= 1000) {
@@ -210,7 +249,7 @@ async function loadQuestion() {
                 showCompletionScreen(currentSession.grade);
             } else {
                 console.error('Failed to load question:', errorData.error);
-                alert('Error loading next question. Please refresh.');
+                await showSystemAlert('Error loading next question. Please refresh.');
             }
             return;
         }
@@ -218,7 +257,25 @@ async function loadQuestion() {
         const q = await response.json();
         
         document.getElementById('questionNum').textContent = q.id + 1;
-        document.getElementById('question').textContent = q.question;
+        
+        // Typing Effect
+        const questionEl = document.getElementById('question');
+        questionEl.textContent = '';
+        const text = q.question;
+        let i = 0;
+        
+        // Clear any existing typing interval
+        if (window.typingInterval) clearInterval(window.typingInterval);
+        
+        window.typingInterval = setInterval(() => {
+            if (i < text.length) {
+                questionEl.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(window.typingInterval);
+            }
+        }, 20); // Speed of typing
+
         document.getElementById('feedback').textContent = '';
         
         const optionsContainer = document.getElementById('options');
@@ -234,7 +291,7 @@ async function loadQuestion() {
 
     } catch (error) {
         console.error('Fatal error loading question:', error);
-        alert('CONNECTION ERROR: Could not load the next question.');
+        await showSystemAlert('CONNECTION ERROR: Could not load the next question.');
     }
 }
 
@@ -269,9 +326,6 @@ async function submitAnswer(questionIndex, selectedIndex) {
         } else {
             buttons[selectedIndex].classList.add('wrong');
             document.getElementById('feedback').innerHTML = '<span class="danger">✗ ACCESS DENIED [-50 CREDITS]</span>';
-            if (data.correctAnswerIndex !== undefined) {
-                buttons[data.correctAnswerIndex].classList.add('correct');
-            }
         }
         
         if (response.ok) {
@@ -290,12 +344,12 @@ async function submitAnswer(questionIndex, selectedIndex) {
                 }, 1500);
             }
         } else {
-            alert('ERROR: ' + data.error);
+            await showSystemAlert('ERROR: ' + data.error);
             document.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = false; });
         }
     } catch (error) {
         console.error('Error submitting answer:', error);
-        alert('CONNECTION ERROR: Unable to submit answer');
+        await showSystemAlert('CONNECTION ERROR: Unable to submit answer');
         document.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = false; });
     }
 }
